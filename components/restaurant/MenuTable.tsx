@@ -39,6 +39,7 @@ export function MenuTable({
   toggleSort,
   sortConfig,
 }: Props) {
+
   const renderSortIndicator = (column: SortConfig['key']) => {
     if (sortConfig.key !== column) return '';
     return sortConfig.direction === 'asc' ? ' ↑' : ' ↓';
@@ -46,6 +47,8 @@ export function MenuTable({
 
   return (
     <View style={styles.section}>
+
+      {/* Cabeçalho */}
       <View style={styles.sectionHeader}>
         <View>
           <Text style={styles.title}>Cardápio cadastrado</Text>
@@ -53,15 +56,20 @@ export function MenuTable({
             Total de pratos exibidos: {sortedItems.length} | Disponíveis: {totalAvailable}
           </Text>
         </View>
+
         <Pressable
           style={[styles.button, styles.primaryButton, isLoadingMenu && styles.buttonDisabled]}
           onPress={refreshMenu}
-          disabled={isLoadingMenu}>
+          disabled={isLoadingMenu}
+        >
           <Text style={styles.primaryButtonText}>Atualizar lista</Text>
         </Pressable>
       </View>
 
-      {!!statusMessage && <Text style={styles.feedback}>{statusMessage}</Text>}
+      {statusMessage !== '' && (
+        <Text style={styles.feedback}>{statusMessage}</Text>
+      )}
+
       {isLoadingMenu && (
         <View style={styles.loadingRow}>
           <ActivityIndicator color={palette.accentDark} />
@@ -69,74 +77,94 @@ export function MenuTable({
         </View>
       )}
 
-      {!isLoadingMenu && sortedItems.length === 0 && <Text>Nenhum prato encontrado.</Text>}
+      {!isLoadingMenu && sortedItems.length === 0 && (
+        <Text>Nenhum prato encontrado.</Text>
+      )}
 
+      {/* Tabela */}
       {!isLoadingMenu && sortedItems.length > 0 && (
         <ScrollView horizontal showsHorizontalScrollIndicator={false}>
           <View style={styles.table}>
+
+            {/* HEADER */}
             <View style={[styles.row, styles.headerRow]}>
-              <View style={[styles.cell, styles.headerCell]}>
-                <Pressable onPress={() => toggleSort('name')}>
-                  <Text style={styles.headerText}>Nome{renderSortIndicator('name')}</Text>
-                </Pressable>
-              </View>
-              <View style={[styles.cell, styles.headerCell]}>
-                <Text style={styles.headerText}>Descrição</Text>
-              </View>
-              <View style={[styles.cell, styles.headerCell]}>
-                <Pressable onPress={() => toggleSort('price')}>
-                  <Text style={styles.headerText}>Preço{renderSortIndicator('price')}</Text>
-                </Pressable>
-              </View>
-              <View style={[styles.cell, styles.headerCell]}>
-                <Text style={styles.headerText}>Categoria</Text>
-              </View>
-              <View style={[styles.cell, styles.headerCell]}>
-                <Pressable onPress={() => toggleSort('unit')}>
-                  <Text style={styles.headerText}>Unidade{renderSortIndicator('unit')}</Text>
-                </Pressable>
-              </View>
-              <View style={[styles.cell, styles.headerCell]}>
-                <Text style={styles.headerText}>Disponível</Text>
-              </View>
-              <View style={[styles.cell, styles.headerCell]}>
-                <Text style={styles.headerText}>Ações</Text>
-              </View>
+              {[
+                { label: "Nome", key: "name" },
+                { label: "Descrição" },
+                { label: "Preço", key: "price" },
+                { label: "Categoria" },
+                { label: "Unidade", key: "unit" },
+                { label: "Disponível" },
+                { label: "Ações" },
+              ].map((col, idx) => (
+                <View key={idx} style={[styles.cell, styles.headerCell]}>
+                  {col.key ? (
+                    <Pressable onPress={() => toggleSort(col.key!)}>
+                      <Text style={styles.headerText}>
+                        {col.label}{renderSortIndicator(col.key!)}
+                      </Text>
+                    </Pressable>
+                  ) : (
+                    <Text style={styles.headerText}>{col.label}</Text>
+                  )}
+                </View>
+              ))}
             </View>
 
-            {sortedItems.map((item) => (
-              <View key={item.id} style={styles.row}>
-                <View style={styles.cell}>
-                  <Text style={styles.cellText}>{item.name}</Text>
-                </View>
-                <View style={styles.cell}>
-                  <Text style={styles.cellText}>{item.description || '—'}</Text>
-                </View>
-                <View style={styles.cell}>
-                  <Text style={styles.cellText}>{formatCurrency(item.price)}</Text>
-                </View>
-                <View style={styles.cell}>
-                  <Text style={styles.cellText}>{item.category || '—'}</Text>
-                </View>
-                <View style={styles.cell}>
-                  <Text style={styles.cellText}>{item.unit || '—'}</Text>
-                </View>
-                <View style={styles.cell}>
-                  <Text style={styles.cellText}>{item.available !== false ? 'Sim' : 'Não'}</Text>
-                </View>
+            {/* BODY */}
+            {sortedItems.map((item, index) => (
+              <View
+                key={item.id}
+                style={[styles.row, index % 2 === 1 && styles.zebraRow]}
+              >
+                <View style={styles.cell}><Text style={styles.cellText}>{item.name}</Text></View>
+                <View style={styles.cell}><Text style={styles.cellText}>{item.description || '—'}</Text></View>
+                <View style={styles.cell}><Text style={styles.cellText}>{formatCurrency(item.price)}</Text></View>
+                <View style={styles.cell}><Text style={styles.cellText}>{item.category || '—'}</Text></View>
+                <View style={styles.cell}><Text style={styles.cellText}>{item.unit || '—'}</Text></View>
+                <View style={styles.cell}><Text style={styles.cellText}>{item.available !== false ? 'Sim' : 'Não'}</Text></View>
+
+                {/* Botões de ação com hover + click */}
                 <View style={[styles.cell, styles.actionsCell]}>
-                  <Pressable style={styles.actionButton} onPress={() => handleEdit(item)}>
+
+                  <Pressable
+                    onPress={() => handleEdit(item)}
+                    style={({ hovered, pressed }) => [
+                      styles.actionButton,
+                      hovered && styles.actionButtonHover,
+                      pressed && styles.actionButtonPressed,
+                    ]}
+                  >
                     <Text style={styles.actionText}>Editar</Text>
                   </Pressable>
-                  <Pressable style={styles.actionButton} onPress={() => handleToggleAvailability(item)}>
+
+                  <Pressable
+                    onPress={() => handleToggleAvailability(item)}
+                    style={({ hovered, pressed }) => [
+                      styles.actionButton,
+                      hovered && styles.actionButtonHover,
+                      pressed && styles.actionButtonPressed,
+                    ]}
+                  >
                     <Text style={styles.actionText}>Alternar</Text>
                   </Pressable>
-                  <Pressable style={styles.actionButton} onPress={() => handleDelete(item)}>
+
+                  <Pressable
+                    onPress={() => handleDelete(item)}
+                    style={({ hovered, pressed }) => [
+                      styles.actionButton,
+                      hovered && styles.actionButtonHover,
+                      pressed && styles.actionButtonPressed,
+                    ]}
+                  >
                     <Text style={styles.actionText}>Excluir</Text>
                   </Pressable>
+
                 </View>
+
               </View>
             ))}
+
           </View>
         </ScrollView>
       )}
@@ -144,10 +172,15 @@ export function MenuTable({
   );
 }
 
+/* ==============================
+   ESTILOS COM CLICK + HOVER
+   ============================== */
+
 const styles = StyleSheet.create({
   section: {
     marginBottom: 40,
   },
+
   sectionHeader: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -156,14 +189,18 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     gap: 12,
   },
+
   title: {
     fontSize: 22,
-    fontWeight: '600',
+    fontWeight: '700',
     color: palette.textPrimary,
   },
+
   subtitle: {
     color: palette.textMuted,
+    fontSize: 13,
   },
+
   button: {
     borderRadius: 999,
     paddingHorizontal: 20,
@@ -173,73 +210,117 @@ const styles = StyleSheet.create({
     backgroundColor: palette.accent,
   },
   buttonDisabled: {
-    opacity: 0.5,
+    opacity: 0.4,
   },
   primaryButtonText: {
     color: '#fff',
     fontWeight: '600',
-    letterSpacing: 1,
     textTransform: 'uppercase',
   },
+
   feedback: {
     color: palette.accentDark,
     fontWeight: '500',
     marginBottom: 12,
   },
+
   loadingRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
     marginBottom: 12,
   },
+
+  /* TABELA */
   table: {
     borderWidth: 1,
     borderColor: 'rgba(66,61,49,0.12)',
     borderRadius: layout.radiusLarge,
     backgroundColor: palette.surface,
-    minWidth: 720,
+    minWidth: 1200,   // evita corte dos botões
+    overflow: 'hidden',
   },
+
   row: {
     flexDirection: 'row',
-    alignItems: 'stretch',
+    alignItems: 'center',
+    paddingVertical: 8,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(66,61,49,0.12)',
+    borderBottomColor: 'rgba(66,61,49,0.08)',
   },
+
+  zebraRow: {
+    backgroundColor: 'rgba(66,61,49,0.03)',
+  },
+
   headerRow: {
-    backgroundColor: 'rgba(66,61,49,0.08)',
+    backgroundColor: 'rgba(66,61,49,0.12)',
+    paddingVertical: 10,
   },
+
   cell: {
     flex: 1,
     paddingVertical: 14,
-    paddingHorizontal: 12,
+    paddingHorizontal: 14,
+    justifyContent: 'center',
   },
+
   headerCell: {
     justifyContent: 'center',
   },
+
   headerText: {
     color: palette.textPrimary,
-    fontWeight: '600',
-    letterSpacing: 1,
-    textTransform: 'uppercase',
+    fontWeight: '700',
+    fontSize: 13,
   },
+
   cellText: {
     color: palette.textPrimary,
+    fontSize: 14,
   },
+
+  /* COLUNA DE AÇÕES */
   actionsCell: {
     flexDirection: 'row',
-    gap: 8,
+    gap: 10,
+    minWidth: 260,
   },
+
+  /* BOTÕES DE AÇÃO */
   actionButton: {
     borderWidth: 1,
-    borderColor: 'rgba(66,61,49,0.2)',
-    borderRadius: 999,
+    borderColor: 'rgba(66,61,49,0.28)',
+    borderRadius: 8,
     paddingVertical: 6,
     paddingHorizontal: 12,
+    backgroundColor: 'rgba(66,61,49,0.06)',
+    shadowColor: '#000',
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    shadowOffset: { width: 0, height: 1 },
+    elevation: 1,
+
+    // Animações suaves no Web
+    transitionDuration: '120ms',
+    transitionProperty: 'background-color, transform, box-shadow',
   },
+
+  actionButtonHover: {
+    backgroundColor: 'rgba(66,61,49,0.12)',
+  },
+
+  actionButtonPressed: {
+    transform: [{ scale: 0.94 }],
+    backgroundColor: 'rgba(66,61,49,0.16)',
+    shadowOpacity: 0.12,
+  },
+
   actionText: {
     color: palette.accentDark,
     fontSize: 12,
-    letterSpacing: 1,
-    textTransform: 'uppercase',
+    fontWeight: '600',
   },
 });
+
+export default MenuTable;
